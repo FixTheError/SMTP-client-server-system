@@ -121,12 +121,14 @@ class SMTP_Handler:
 
     #Handle client connections
     def Handle_Client(self, usr):
+        #main loop, repeats until user sends a quit command
         while(usr.quit == False):
+            #recieve and split the new message
             message = usr.conn.recv(1024)
             msg = codecs.decode(message, "utf-8")
             self.log_incoming(msg, usr.addr[0])
             msg_list = msg.split()
-            #print(msg)
+            #takeappropriateaction according to RFC command
             if(msg_list[0] == "HELO"):
                 retrn = self.HELO(msg, usr)
                 if(retrn == 0):
@@ -153,8 +155,6 @@ class SMTP_Handler:
 
     def HELO(self, msg, usr):
         msg_list = msg.split(" ")
-        #print(msg_list[0])
-        #print(msg_list[1])
         if(len(msg_list) < 2):
             rep = "501 Syntax error in parameters or arguments: expected user\n"
             self.log_reply(rep, usr)
@@ -162,7 +162,7 @@ class SMTP_Handler:
             return
         if(len(msg_list) == 3):
             #valid = False
-            if(msg_list[2] == "wewillalwaysbepartofthegreatmisdirect"):
+            if(msg_list[2] == "wewillalwaysbepartofthegreatmisdirect"): #BTBAM rules!
                 
                 for serv in remote_servs:
                     if(serv.domain == msg_list[1]):
