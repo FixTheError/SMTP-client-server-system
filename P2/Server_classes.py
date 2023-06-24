@@ -12,7 +12,7 @@ import string
 #container for information about a connection
 mutex = threading.Semaphore()
 class user:
-    
+    #Initialize a new user
     def __init__(self, name, conn, addr):
         self.name = name
         self.alias = ""
@@ -27,7 +27,7 @@ class user:
         self.serv = False
 
 class remote_server:
-
+    #Initialize a server
     def __init__(self, domain, ip, port):
         self.domain = domain
         self.ip = ip
@@ -41,6 +41,7 @@ class SMTP_Handler:
     
     #set up listener
     def __init__(self, conf):
+        #Read in the configuration file and parse
         mutex.acquire()
         config = open(conf, "r")
         lines = config.readlines()
@@ -53,6 +54,7 @@ class SMTP_Handler:
         tmp_list = tmp.split("=")
         port = tmp_list[1]
         lnum = 3
+        #initialize known servers
         while(lnum < len(lines)):
             remote_name = lines[lnum].strip()
             lnum += 1
@@ -66,30 +68,29 @@ class SMTP_Handler:
             lnum += 1
             external = remote_server(remote_name, remote_ip, remote_port)
             remote_servs.append(external)
-        
+
+        #Set up an array for threads and set up directory to act as a database
         threads = []
-        #print ("I did a thing")
         mutex.acquire()
         if not os.path.exists('db'):
             os.makedirs('db')
         mutex.release()
+        # Set up a listener and create a new thread for each connection
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             myhost = socket.gethostname()
             self.HOST = socket.gethostbyname(myhost)
-            #print (HOST)
             s.bind((self.HOST, int(port)))
             while(True):
                 s.listen()
                 conn, addr = s.accept()
                 print ("got SMTP connection from ", addr)
-                #message = conn.recv(1024)
-                #print (message)
                 usr = user("", conn, addr)
                 t = threading.Thread(target = self.Handle_Client, args = (usr,))
                 threads.append(t)
                 t.start()
         return
 
+    #log server replies
     def log_reply(self, rep, usr):
         log_ent = str(datetime.now()) + " from: " + self.HOST + " To: " + usr.addr[0] + " " + rep + "\n"
         print(log_ent)
@@ -99,6 +100,8 @@ class SMTP_Handler:
         lf.close()
         mutex.release()
         return
+
+    #log messages from users
     def log_incoming(self, rep, frm):
         log_ent = str(datetime.now()) 
         log_ent = log_ent + " from: " 
@@ -115,7 +118,8 @@ class SMTP_Handler:
         lf.close()
         mutex.release()
         return
-    
+
+    #Handle client connections
     def Handle_Client(self, usr):
         while(usr.quit == False):
             message = usr.conn.recv(1024)
