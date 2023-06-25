@@ -128,7 +128,7 @@ class SMTP_Handler:
             msg = codecs.decode(message, "utf-8")
             self.log_incoming(msg, usr.addr[0])
             msg_list = msg.split()
-            #takeappropriateaction according to RFC command
+            #take appropriate action according to RFC command
             if(msg_list[0] == "HELO"):
                 retrn = self.HELO(msg, usr)
                 if(retrn == 0):
@@ -152,16 +152,18 @@ class SMTP_Handler:
                 usr.conn.sendall(b"500 Syntax error, command unrecognized\n")
         return
     
-
+    #Handle HELO
     def HELO(self, msg, usr):
         msg_list = msg.split(" ")
+        #Check if the user included their username
         if(len(msg_list) < 2):
             rep = "501 Syntax error in parameters or arguments: expected user\n"
             self.log_reply(rep, usr)
             usr.conn.sendall(b"501 Syntax error in parameters or arguments: expected user\n")
             return
+
+        #Check if the secret phrase was included
         if(len(msg_list) == 3):
-            #valid = False
             if(msg_list[2] == "wewillalwaysbepartofthegreatmisdirect"): #BTBAM rules!
                 
                 for serv in remote_servs:
