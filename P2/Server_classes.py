@@ -162,19 +162,19 @@ class SMTP_Handler:
             usr.conn.sendall(b"501 Syntax error in parameters or arguments: expected user\n")
             return
 
-        #Check if the secret phrase was included
+        #Remote servers will only pass 2 parameters, looks like "HELO example.ex wewillalwaysbepartofthegreatmisdirect"
         if(len(msg_list) == 3):
+            #Check for secret phrase
             if(msg_list[2] == "wewillalwaysbepartofthegreatmisdirect"): #BTBAM rules!
-                
                 for serv in remote_servs:
                     if(serv.domain == msg_list[1]):
+                        #send the OK code, log the reply
                         rep = "250 OK\n"
                         self.log_reply(rep, usr)
                         usr.conn.sendall(b"250 OK\n")
                         usr.name = serv.domain
                         usr.registered = True
                         usr.serv = True
-                        #print(msg_list[2] + "\n")
                         return 1
                 return 0
         rep = "250 " + self.local_domain + " Welcome to " + self.local_domain + " SMTP server\n"
