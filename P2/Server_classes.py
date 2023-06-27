@@ -232,23 +232,26 @@ class SMTP_Handler:
             pass_64 = usr.conn.recv(1024)
             self.log_incoming(codecs.decode(pass_64, "utf-8"), usr.addr[0])
             temp = base64.b64decode(pass_64)
-            #Salt the decoded password, re-encode,
+            #Salt the decoded password, re-encode, and compare to the stored password to check validity
             salt = b"447S21" + temp
             b_salt = base64.b64encode(salt)
             salt_64 = codecs.decode(b_salt, "utf-8")
             if(salt_64 == match):
+                #The user is who they say they are. Log, encode, and send tthe success response, then name and register the connection
                 rep = "235 2.7.0 Authentication Succeeded\n"
                 self.log_reply(rep, usr)
                 usr.conn.sendall(b"235 2.7.0 Authentication Succeeded\n")
                 usr.name = name
                 usr.registered = True
             else:
+                #Invalid password, log, encode, and send failure response. Then close the connection and allow this thread to return
                 rep = "535 2.7.0 Authentication credentials invalid, terminating\n"
                 self.log_reply(rep, usr)
                 usr.conn.sendall(b"535 2.7.0 Authentication credentials invalid, terminating\n")
                 usr.quit = True
                 usr.conn.close()
         else:
+            #this is a new user
             chars = string.digits + string.ascii_letters
             r_string = "".join(random.choice(chars) for i in range(6))
             b_string = codecs.encode(r_string, "utf-8")
