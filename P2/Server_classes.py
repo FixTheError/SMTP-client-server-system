@@ -132,6 +132,7 @@ class SMTP_Handler:
             if(msg_list[0] == "HELO"):
                 retrn = self.HELO(msg, usr)
                 if(retrn == 0):
+                    #There is an impostor among us, abort mission! Run for the hills!
                     usr.quit = True
                     usr.conn.close()
             elif(msg_list[0] == "AUTH"):
@@ -155,7 +156,7 @@ class SMTP_Handler:
     #Handle HELO
     def HELO(self, msg, usr):
         msg_list = msg.split(" ")
-        #Check if the user included their username
+        #Check for parameters
         if(len(msg_list) < 2):
             rep = "501 Syntax error in parameters or arguments: expected user\n"
             self.log_reply(rep, usr)
@@ -168,7 +169,7 @@ class SMTP_Handler:
             if(msg_list[2] == "wewillalwaysbepartofthegreatmisdirect"): #BTBAM rules!
                 for serv in remote_servs:
                     if(serv.domain == msg_list[1]):
-                        #send the OK code, log the reply
+                        #send the OK code, log the reply, and register the domain as a special user connection
                         rep = "250 OK\n"
                         self.log_reply(rep, usr)
                         usr.conn.sendall(b"250 OK\n")
@@ -177,16 +178,18 @@ class SMTP_Handler:
                         usr.serv = True
                         return 1
                 return 0
+        #send welcome reply andregister the user connection
         rep = "250 " + self.local_domain + " Welcome to " + self.local_domain + " SMTP server\n"
         self.log_reply(rep, usr)
         b_rep = codecs.encode(rep, "utf-8")
         usr.conn.sendall(b_rep)
         msg_list[1].strip()
         usr.alias = msg_list[1]
-        
         return 1
-    
+
+    #User authentication
     def AUTH(self, msg, usr):
+        #Encode and send reply prompting for username
         code = b"334 "
         usr_tail = b"username"
         pass_tail = b"password"
@@ -196,6 +199,7 @@ class SMTP_Handler:
         rep = codecs.decode(user_msg, "utf-8") + "\n"
         self.log_reply(rep, usr)
         usr.conn.sendall(user_msg)
+        #receive username, decode, and load the hidden password file into memory
         name_64 = usr.conn.recv(1024)
         self.log_incoming(codecs.decode(name_64, "utf-8"), usr.addr[0])
         temp = base64.b64decode(name_64)
@@ -211,26 +215,25 @@ class SMTP_Handler:
         found = False
         pwrd = ""
         match = ""
+        #Check the contents of the password file for a matching username
         for line in lines:
             tmp = line.split("=")
-            print(tmp[0])
-            print(name)
             if((len(tmp) == 2) and (tmp[0] == name)):
                match = tmp[1].strip()
                found = True
                break
         if (found):
+            #This user exists on this server. Encode and send password prompt
             pass_msg = code + pass_tail
             rep = codecs.decode(pass_msg, "utf-8") + "\n"
             self.log_reply(rep, usr)
             usr.conn.sendall(pass_msg)
+            #Receive encoded password, log it, then decode it
             pass_64 = usr.conn.recv(1024)
             self.log_incoming(codecs.decode(pass_64, "utf-8"), usr.addr[0])
             temp = base64.b64decode(pass_64)
-            
+            #Salt the decoded password, re-encode,
             salt = b"447S21" + temp
-            
-            
             b_salt = base64.b64encode(salt)
             salt_64 = codecs.decode(b_salt, "utf-8")
             if(salt_64 == match):
