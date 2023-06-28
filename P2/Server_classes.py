@@ -313,29 +313,38 @@ class SMTP_Handler:
                             usr.conn.sendall(b"250 OK\n")
                             usr.frm = tmp_list[0]
                             return
+                #Make sure the user didn't type user@ without a domain.
+                #I think this could have just been elif ((len(tmp_list) == 2)), I was probably just overthinking.
                 elif((len(tmp_list) == 2) and (tmp_list[1] == self.local_domain)):
+                    #Check if the usernames match
                     if(usr.name == tmp_list[0]):
+                        #Usernames match, log and send OK response, then set the from buffer.
                         rep = "250 OK\n"
                         self.log_reply(rep, usr)
                         usr.conn.sendall(b"250 OK\n")
                         usr.frm = msg_list[2]
                     else:
+                        #User either typed their username incorrectly, or is up to sometthing malicious.
+                        #log and send mailbox not allowed code.
                         rep = "553 Requested action not taken: mailbox name not allowed\n"
                         self.log_reply(rep, usr)
                         usr.conn.sendall(b"553 Requested action not taken: mailbox name not allowed\n")
-
                     return
             else:
+                #User formatted their email address wrong, log and send syntax error code for address format.
                 rep = "501 Syntax error in parameters or arguments: expected user@" + self.local_domain + "\n"
                 self.log_reply(rep, usr)
                 b_rep = codecs.encode(rep, "utf-8")
                 usr.conn.sendall(b_rep)
         elif(msg_list[1] != "FROM:"):
+            #User did not type out the full command name, log and send syntax error response.
             rep = "500 Syntax error, command unrecognized: expected MAIL FROM: user@" + self.local_domain + "\n"
             self.log_reply(rep, usr)
             b_rep = codecs.encode(rep, "utf-8")
             usr.conn.sendall(b_rep)
         elif(len(msg_list) > 3):
+            #User included extra parameters, this server only supports the address parameter.
+            #Log and send oarameters not recognized response for MAIL FROM:/RCPT TO commands.
             rep = "555 MAIL FROM/RCPT TO parameters not recognized or not implemented\n"
             self.log_reply(rep, usr)
             usr.conn.sendall(b"555 MAIL FROM/RCPT TO parameters not recognized or not implemented\n")
