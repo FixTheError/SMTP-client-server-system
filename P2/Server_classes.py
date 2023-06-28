@@ -281,25 +281,31 @@ class SMTP_Handler:
             mutex.release()
         return
 
+    #Start a new email.
     def MAIL_FROM(self, msg, usr):
-        
+        #Make sure this user is authenticated, if not, log and send error reply to remind the user to use AUTH first.
         if (usr.registered == False):
             rep = "503 Bad sequence of commands: expected AUTH\n"
             self.log_reply(rep, usr)
             usr.conn.sendall(b"503 Bad sequence of commands: expected AUTH\n")
             return
         msg_list = msg.split()
+        #Syntax check, make sure the command includes an address parameter as the only parameter.
         if((msg_list[1] == "FROM:") and (len(msg_list) == 3)):
+            #Syntax check, make sure address parameter includes a domain.
             if (msg_list[2].count('@') == 1):
+                #Split the address parameter and check if the domain provided matches the local domain.
                 tmp_list = msg_list[2].split("@")
                 if((len(tmp_list) == 2) and (tmp_list[1] != self.local_domain)):
-                    print(self.local_domain)
-                    print(tmp_list[1])
+                    #Is this another server forwarding an email to a user on this domain?
                     if(usr.serv == False):
+                        #This connection is not a remote server, log and send domain mismatch error response and return to main loop.
                         rep = "501 Syntax error in parameters or arguments: domain mismatch\n"
                         self.log_reply(rep, usr)
                         usr.conn.sendall(b"501 Syntax error in parameters or arguments: domain mismatch\n")
                         return
+                    #This is another domain forwarding an email to a user in this one.
+                    #Find the domain, log and send the OK reply, and set the from buffer for this connection.
                     for serv in remote_servs:
                         if(serv.domain == tmp_list[1]):
                             rep = "250 OK\n"
