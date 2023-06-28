@@ -251,7 +251,8 @@ class SMTP_Handler:
                 usr.quit = True
                 usr.conn.close()
         else:
-            #this is a new user
+            #this is a new user, create a password for this user and store it
+            #I probably did this in the most goofy way possible, but I think I was running low on time and overthinking
             chars = string.digits + string.ascii_letters
             r_string = "".join(random.choice(chars) for i in range(6))
             b_string = codecs.encode(r_string, "utf-8")
@@ -265,14 +266,15 @@ class SMTP_Handler:
             usr_pass.write(wr_buf)
             usr_pass.close()
             mutex.release()
+            #log and send reply containing the password for the new user. 
+            #Then terminate connection and set quit to true to allow this thread to return so the user can log in with their new password.
             rep = codecs.decode(s_buf, "utf-8") + "\n"
             self.log_reply(rep, usr)
             usr.conn.sendall(s_buf)
             usr.quit = True
             usr.conn.close()
+            #Create a new directory for this user's emails.
             path = "db/" + name
-            #print (path)
-            #d = os.path.dirname(path)
             mutex.acquire()
             if not os.path.exists(path):
                 os.makedirs(path)
