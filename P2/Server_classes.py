@@ -350,17 +350,24 @@ class SMTP_Handler:
             usr.conn.sendall(b"555 MAIL FROM/RCPT TO parameters not recognized or not implemented\n")
         return
 
+    #Specify a recipient.
     def RCPT_TO(self, msg, usr):
-        #print (msg)
+        #See if the command is recognized.
         msg_list = msg.split()
         if((msg_list[1] == "TO:") and (len(msg_list) == 3)):
+            #Make sure the parameter contains a username and domain.
             if (msg_list[2].count('@') == 1):
+                #Does the domain match?
                 tmp_list = msg_list[2].split("@")
                 if((len(tmp_list) == 2) and (tmp_list[1] == self.local_domain)):
+                    #Domain matches, log and send OK reply. Then add the address to the user's recipient buffer.
                     rep = "250 OK\n"
                     self.log_reply(rep, usr)
                     usr.conn.sendall(b"250 OK\n")
                     usr.rcpt.append(msg_list[2])
+                    #Make sure the recipient has a directory.
+                    #There should be an extra if to make sure the user exists.
+                    #No sense in creating zombie accounts.
                     path = "db/" + tmp_list[0]
                     mutex.acquire()
                     if not os.path.exists(path):
@@ -368,12 +375,15 @@ class SMTP_Handler:
                     mutex.release()
                     usr.ready = True
                 elif(len(tmp_list) == 2):
+                    #Recipient is not on this domain, see if they're on a recognized.
                     f = False
                     for serv in remote_servs:
                         if(serv.domain == tmp_list[1]):
                             f = True
                             break
                     if f:
+                        #Found the remote server.
+                        #Log and send "will forward" reply, add the address to recipient buffer, and allow for DATA command.
                         rep = "251 User not local; will forward\n"
                         self.log_reply(rep, usr)
                         usr.conn.sendall(b"251 User not local; will forward\n")
@@ -381,6 +391,7 @@ class SMTP_Handler:
                         usr.ready = True
                         
                     else:
+                        #No match found. log and send domain not supported error.
                         rep = "450 Requested mail action not taken: domain not supported\n"
                         self.log_reply(rep, usr)
                         usr.conn.sendall(b"450 Requested mail action not taken: domain not supported\n")
@@ -389,17 +400,20 @@ class SMTP_Handler:
                     self.log_reply(rep, usr)
                     usr.conn.sendall(b"501 Syntax error in parameters or arguments: domain mismatch\n")
             else:
+                #Address syntax is wrong. Log and send syntax error reply.
                 rep = "501 Syntax error in parameters or arguments: expected user@" + self.local_domain + "\n"
                 self.log_reply(rep, usr)
                 b_rep = codecs.encode(rep, "utf-8")
                 usr.conn.sendall(b_rep)
         elif(msg_list[1] != "TO:"):
+            #User forgot to include the TO: part. Log and send syntax error response.
             rep = "500 Syntax error, command unrecognized: expected RCPT TO: user@" + self.local_domain + "\n"
             self.log_reply(rep, usr)
             b_rep = codecs.encode(rep, "utf-8")
             usr.conn.sendall(b_rep)
-            usr.conn.sendall(b"500 Syntax error, command unrecognized: expected RCPT TO: user@447.edu\n")
+            #usr.conn.sendall(b"500 Syntax error, command unrecognized: expected RCPT TO: user@447.edu\n")
         elif(len(msg_list) > 3):
+            #User included too many parameters. Log and send parameters not recognized reply.
             rep = "555 MAIL FROM/RCPT TO parameters not recognized or not implemented\n"
             self.log_reply(rep, usr)
             usr.conn.sendall(b"555 MAIL FROM/RCPT TO parameters not recognized or not implemented\n")
