@@ -1,3 +1,5 @@
+This is just a rudimentary example of a SMTP system for demonstration purposes, it is by no means secure.
+If you use it for anything other than goofing around, you do so at your own risk.
 Server compilation:
 python SMTP_Server.py Server.conf
 
