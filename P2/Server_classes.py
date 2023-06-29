@@ -419,10 +419,13 @@ class SMTP_Handler:
             usr.conn.sendall(b"555 MAIL FROM/RCPT TO parameters not recognized or not implemented\n")
         return
 
+    #Get the contents of the email.
     def DATA(self, msg, usr):
         msg_list = msg.split()
         if(len(msg_list) == 1):
+            #No parameters needed, has the user completed the correct sequence of commands?
             if ((len(usr.rcpt) != 0) and usr.ready):
+                #Ready to recieve data, let the user know and recieve the data, then put it in the buffer.
                 rep = "354 Start mail input; end with <CRLF>.<CRLF>\n"
                 self.log_reply(rep, usr)
                 usr.conn.sendall(b"354 Start mail input; end with <CRLF>.<CRLF>\n")
@@ -430,7 +433,7 @@ class SMTP_Handler:
                 self.log_incoming(codecs.decode(message, "utf-8"), usr.addr[0])
                 msg1 = codecs.decode(message, "utf-8")
                 usr.data += msg1
-            
+                #Loop until the user terminates the email.
                 while(msg1 != ".\n"):
                     message = usr.conn.recv(1024)
                     self.log_incoming(codecs.decode(message, "utf-8"), usr.addr[0])
