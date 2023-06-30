@@ -439,7 +439,8 @@ class SMTP_Handler:
                     self.log_incoming(codecs.decode(message, "utf-8"), usr.addr[0])
                     msg1 = codecs.decode(message, "utf-8")
                     usr.data += msg1
-            
+
+                #Find all local recipients and add a file containing the email to their directories.
                 for rcpt in usr.rcpt:
                     rcpt_lst = rcpt.split("@")
                     if(rcpt_lst[1] == self.local_domain):
@@ -461,19 +462,21 @@ class SMTP_Handler:
                         fp.close()
                         mutex.release()
                     else:
-                        
+                        #Find the remote server the recipient is on
                         found = None
                         for serv in remote_servs:
                             if (serv.domain == rcpt_lst[1]):
-                                
                                 found = serv
                                 break
+
                         if found is not None:
+                            #Create a new connection  to the remote server.
                             print("found")
                             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                             ret = s.connect_ex((found.ip_regex[0], int(found.port)))
                             if (ret == 0):
-                                tmp_usr =  user("", s, found.ip)
+                                #Create a user for this connection and forward the email by following a slightly altered sequence of commands.
+                                tmp_usr =  user("", s, found.ip)#This is probably unnecessary.
                                 msg = "HELO " + self.local_domain + " wewillalwaysbepartofthegreatmisdirect"
                                 send_it = codecs.encode(msg, "utf-8")
                                 self.log_reply(msg, tmp_usr)
@@ -507,6 +510,7 @@ class SMTP_Handler:
                                     s.sendall(send_it)
                                 rep = s.recv(1024)
                                 self.log_incoming(codecs.decode(rep, "utf-8"), usr.addr[0])
+                                #Quit and close the connection.
                                 msg = "QUIT\n"
                                 send_it = codecs.encode(msg, "utf-8")
                                 self.log_reply(msg, tmp_usr)
@@ -515,22 +519,27 @@ class SMTP_Handler:
                                 self.log_incoming(codecs.decode(rep, "utf-8"), usr.addr[0])
                                 s.close()
                             else:
+                                #Could not connect to the remote server, log and send failure response.
                                 rep = "554 Transaction failed: remote server offline\n"
                                 self.log_reply(rep, usr)
                                 usr.conn.sendall(b"554 Transaction failed: remote server offline\n")
                                 return
                         else:
                             print("debug: domain not supported")
+
+                #Clear buffers and send OK
                 usr.rcpt.clear()
                 usr.data = ""
                 rep = "250 OK\n"
                 self.log_reply(rep, usr)
                 usr.conn.sendall(b"250 OK\n")
             else:
+                #User forgot one or more of the previous commands, send notification.
                 rep = "503 Bad sequence of commands: expected RCPT TO: user@domain.edu\n"
                 self.log_reply(rep, usr)
                 usr.conn.sendall(b"503 Bad sequence of commands: expected RCPT TO: user@domaim.edu\n")
         else:
+            #User included unsupported parameters, send parameter error response.
             rep = "504 Command parameter not implemented\n"
             self.log_reply(rep, usr)
             usr.conn.sendall(b"504 Command parameter not implemented\n")
