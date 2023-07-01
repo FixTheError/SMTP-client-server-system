@@ -585,8 +585,10 @@ class SMTP_Handler:
             self.log_reply(rep, usr)
             usr.conn.sendall(b"214 Syntax: QUIT\nThis ends the connection and closes your client.\n")
         return
-    
+
+    #TTerminate session.
     def QUIT(self, msg, usr):
+        #Send termination response, close the socket, and allow this thread to return.
         rep = "221 Closing transmission channel\n"
         self.log_reply(rep, usr)
         usr.conn.sendall(b"221 Closing transmission channel\n")
@@ -595,10 +597,11 @@ class SMTP_Handler:
         return
     pass
 
+#Handle HTTP commands for viewing emails.
 class HTTP_Handler:
 
     local_domain = None
-
+    #Initialize HTTP thread.
     def __init__(self, conf):
         mutex.acquire()
         config = open(conf, "r")
