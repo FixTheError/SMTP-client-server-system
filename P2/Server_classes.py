@@ -631,6 +631,7 @@ class HTTP_Handler:
                 t.start()
             return
 
+    #Log HTTP messages with a timestamp.
     def log(self, rep, frm, to):
         log_ent = str(datetime.now()) + " from: " + frm + " To: " + to + " " + rep + "\n"
         print(log_ent)
@@ -641,7 +642,9 @@ class HTTP_Handler:
         mutex.release()
         return
 
+    #User authenticattion.
     def AUTH(self, msg, usr):
+        #Set up username and password prompts.
         code = b"334 "
         usr_tail = b"username"
         pass_tail = b"password"
@@ -650,12 +653,14 @@ class HTTP_Handler:
         user_msg = code + usr_tail
         rep = codecs.decode(user_msg, "utf-8") + "\n"
         self.log(rep, self.HOST, usr.addr[0])
+        #Send prompt and get the username.
         usr.conn.sendall(user_msg)
         name_64 = usr.conn.recv(1024)
         self.log(codecs.decode(name_64, "utf-8"), usr.addr[0], self.HOST)
         temp = base64.b64decode(name_64)
         name = codecs.decode(temp, "utf-8")
         name = name.strip()
+        #Read the user password file into a list.
         mutex.acquire()
         usr_pass = open("db/.user_pass", "r+")
         lines = usr_pass.readlines()
@@ -664,6 +669,7 @@ class HTTP_Handler:
         found = False
         pwrd = ""
         match = ""
+        #Find the user.
         for line in lines:
             tmp = line.split("=")
             if((len(tmp) == 2) and (tmp[0] == name)):
@@ -671,10 +677,12 @@ class HTTP_Handler:
                found = True
                break
         if (found):
+            #User was found, prompt them for the password.
             pass_msg = code + pass_tail
             rep = codecs.decode(pass_msg, "utf-8") + "\n"
             self.log(rep, self.HOST, usr.addr[0])
             usr.conn.sendall(pass_msg)
+            #Get the password, decode, salt, and re-encode the password.
             pass_64 = usr.conn.recv(1024)
             self.log(codecs.decode(pass_64, "utf-8"), usr.addr[0], self.HOST)
             temp = base64.b64decode(pass_64)
@@ -683,7 +691,9 @@ class HTTP_Handler:
             b_salt = codecs.encode(salt, "utf-8")
             b_salt = base64.b64encode(b_salt)
             salt_64 = codecs.decode(b_salt, "utf-8")
+            #Compare the salted password to the stored value.
             if(salt_64 == match):
+                #Password matched, let the user know and allow tthem to proceed.
                 path ="db/" + name
                 num_files = len([file for file in os.listdir(path) if os.path.isfile(os.path.join(path, file))])
                 rep = "235 2.7.0 Authentication Succeeded: " + str(num_files) + " emails unread\n"
@@ -692,12 +702,14 @@ class HTTP_Handler:
                 usr.name = name
                 usr.registered = True
             else:
+                #Wrong password, abort mission!
                 rep = "535 2.7.0 Authentication credentials invalid, terminating\n"
                 self.log(rep, self.HOST, usr.addr[0])
                 usr.conn.sendall(b"535 2.7.0 Authentication credentials invalid, terminating\n")
                 usr.quit = True
                 usr.conn.close()
         else:
+            #This is a new user, generate a password, store it, and send it to the user, then terminate so the user can log in again.
             chars = string.digits + string.punctuation + string.ascii_letters
             r_string = "".join(random.choice(chars) for i in range(6))
             b_string = codecs.encode(r_string, "utf-8")
