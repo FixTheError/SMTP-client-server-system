@@ -546,32 +546,40 @@ class SMTP_Handler:
             
         return
 
+    ##Tell user how to use the server properly.
     def HELP(self, msg, usr):
         msg_list = msg.split(" ",1)
+        #General help, send a list of commands and the proper sequence for them.
         if(len(msg_list) == 1):
             rep = "214 Available commands: HELO, AUTH, MAIL FROM:, RCPT TO:, DATA:, QUIT\nMail sequence: HELO, AUTH, MAIL FROM, RCPT TO, DATA\nUser must register with the HELO command first.\nFor help with specific commands type HELP command\n"
             self.log_reply(rep, usr)
             usr.conn.sendall(b"214 Available commands: HELO, AUTH, MAIL FROM:, RCPT TO:, DATA:, QUIT\nMail sequence: HELO, AUTH, MAIL FROM, RCPT TO, DATA\nUser must register with the HELO command first.\nFor help with specific commands type HELP command\n")
+        #Tell the user how to use HELO..
         elif(msg_list[1] == "HELO"):
             rep = "214 Syntax: HELO username\nThis command registers the user connection and must be called before attempting to make a mail transaction.\n"
             self.log_reply(rep, usr)
             usr.conn.sendall(b"214 Syntax: HELO username\nThis command registers the user connection and must be called before attempting to make a mail transaction.\n")
+        #Tell the user how to use AUTH.
         elif(msg_list[1] == "AUTH"):
             rep = "214 Syntax: AUTH\nThis command registers the user and must be called before attempting to make a mail transaction.\nYou will be prompted for login info, new users will recieve a password and disconnect once AUTH succeeds\nYou may then proceed to restart the connection\n"
             self.log_reply(rep, usr)
             usr.conn.sendall(b"214 Syntax: AUTH\nThis command registers the user and must be called before attempting to make a mail transaction.\nYou will be prompted for login info, new users will recieve a password and disconnect once AUTH succeeds\nYou may then proceed to restart the connection\n")
+        #Tell the user how to use MAIL FROM.
         elif((msg_list[1] == "MAIL FROM:") or (msg_list[1] == "MAIL")):
             rep = "214 Syntax: MAIL FROM: user\nMake sure to use the same name you used in the HELO command.\n"
             self.log_reply(rep, usr)
             usr.conn.sendall(b"214 Syntax: MAIL FROM: user\nMake sure to use the same name you used in the HELO command.\n")
+        #Tell the user how to specify recipients
         elif((msg_list[1] == "RCPT TO:") or (msg_list[1] == "RCPT")):
             rep = "214 Syntax: RCPT TO: user\nThere is no guarantee that user exists, but if not a new folder will be created.\nFor multiple users, multiple subsequent RCPT TO commands can be issued before DATA\n"
             self.log_reply(rep, usr)
             usr.conn.sendall(b"214 Syntax: RCPT TO: user\nThere is no guarantee that user exists, but if not a new folder will be created.\nFor multiple users, multiple subsequent RCPT TO commands can be issued before DATA\n")
+        #Tell the user how to enter email data.
         elif((msg_list[1] == "DATA:") or (msg_list[1] == "DATA")):
             rep = "214 Syntax: DATA:\nSome data\n.\nBe sure to terminate your data with a line containing only a period.\n"
             self.log_reply(rep, usr)
             usr.conn.sendall(b"214 Syntax: DATA:\nSome data\n.\nBe sure to terminate your data with a line containing only a period.\n")
+        #Tell the user how to terminate their session.
         elif(msg_list[1] == "QUIT"):
             rep = "214 Syntax: QUIT\nThis ends the connection and closes your client.\n"
             self.log_reply(rep, usr)
