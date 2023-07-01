@@ -603,22 +603,24 @@ class HTTP_Handler:
     local_domain = None
     #Initialize HTTP thread.
     def __init__(self, conf):
+        #Read the config file into memory.
         mutex.acquire()
         config = open(conf, "r")
         lines = config.readlines()
         config.close()
         mutex.release()
         local_domain = lines[0].strip
-        
         tmp = lines[2]
         tmp_list = tmp.split("=")
         port = tmp_list[1]
         threads = []
+        #Create a listener socket.
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             myhost = socket.gethostname()
             self.HOST = socket.gethostbyname(myhost)
-            #print (HOST)
             s.bind((self.HOST, int(port)))
+            #Continuously listen and accept connections, creating a new thread for each one.
+            #Probably a good idea to implement a server-side command to allow the server to go offline when needed.
             while(True):
                 s.listen()
                 conn, addr = s.accept()
