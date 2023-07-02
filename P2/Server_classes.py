@@ -729,18 +729,21 @@ class HTTP_Handler:
             usr.quit = True
         return
 
+    #Handle a client HTTP connection
     def Handle_client(self, usr):
         message = usr.conn.recv(1024)
         msg = codecs.decode(message, "utf-8")
         self.log(msg, usr.addr[0], self.HOST)
         msg_list = msg.split()
         while(usr.registered == False):
+            #User is not registered, make sure they use AUTH.
             if(msg_list[0] == "AUTH"):
                 self.AUTH(msg, usr)
                 if(usr.registered == False):
                     usr.conn.close()
                     return
             else:
+                #User must use AUTH first, let them know.
                 rep = "503 Bad sequence of commands: expected AUTH\n"
                 self.log_reply(rep, usr)
                 usr.conn.sendall(b"503 Bad sequence of commands: expected AUTH\n")
@@ -752,6 +755,7 @@ class HTTP_Handler:
         msg = codecs.decode(message, "utf-8")
         self.log(msg, usr.addr[0], self.HOST)
         msg_list = msg.split()
+        #Handle GET request.
         if((len(msg_list) == 7) and (msg_list[0] == "GET") and (msg_list[2] == "HTTP/1.1") and(msg_list[3] == "Host:") and (msg_list[5] == "Count:") and (int(msg_list[6]) > 0)):
             path = msg_list[1]
             host = msg_list[4]
