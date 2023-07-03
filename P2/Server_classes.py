@@ -797,18 +797,23 @@ class HTTP_Handler:
                     mutex.release()
                     count -= 1
                     num_files -= 1
-                    
+
+                #Mailbox is now empty, send the OK
                 rep = "250 OK"
                 self.log(rep, self.HOST, usr.addr[0])
                 usr.conn.sendall(b'250 OK')
             else:
+                #User's directory could not be found, let them know.
                 rep = "404 Not Found: provided direcory cannot be found\n"
                 self.log(rep, self.HOST, usr.addr[0])
                 usr.conn.sendall(b'404 Not Found: provided direcory cannot be found\n')
         else:
+            #User didn't type the command right, let them know.
             rep = "400 Bad Request: syntax error\n"
             self.log(rep, self.HOST, usr.addr[0])
             usr.conn.sendall(b'400 Bad Request: syntax error\n')
+
+        #HTTP transaction is finished, close the connection
         usr.conn.close()
         return
     pass
