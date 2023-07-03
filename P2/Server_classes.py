@@ -757,11 +757,13 @@ class HTTP_Handler:
         msg_list = msg.split()
         #Handle GET request.
         if((len(msg_list) == 7) and (msg_list[0] == "GET") and (msg_list[2] == "HTTP/1.1") and(msg_list[3] == "Host:") and (msg_list[5] == "Count:") and (int(msg_list[6]) > 0)):
+            #Find all the user's unread emails.
             path = msg_list[1]
             host = msg_list[4]
             count = int(msg_list[6])
             num_files = len([file for file in os.listdir(path) if os.path.isfile(os.path.join(path, file))])
             if os.path.exists(path):
+                #Send the OK with a tttimestamp showing when the most recent email was sent and the file type.
                 path1 = path + "/" + str(num_files) + ".email"
                 mutex.acquire()
                 etime = os.path.getmtime(path1)
@@ -772,6 +774,7 @@ class HTTP_Handler:
                 b_send = codecs.encode(send_buf, "utf-8")
                 usr.conn.sendall(b_send)
                 while((count > 0) and (num_files > 0)):
+                    #For each file, read the contents into memory.
                     send_buf = "Message: " + str(num_files)
                     b_send = codecs.encode(send_buf, "utf-8")
                     self.log(send_buf, self.HOST, usr.addr[0])
@@ -782,13 +785,13 @@ class HTTP_Handler:
                     f_data = fp.readlines()
                     fp.close()
                     mutex.release()
+                    #Send the data line by line.
                     for line in f_data:
-                        
                         self.log(line, self.HOST, usr.addr[0])
                         b_data = codecs.encode(line, "utf-8")
                         usr.conn.sendall(b_data) 
                     
-                    
+                    #Delete the file once sent to minimize usage of storage space.
                     mutex.acquire()
                     os.remove(path1)
                     mutex.release()
