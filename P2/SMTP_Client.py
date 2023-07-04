@@ -31,16 +31,20 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     done = False
     
     while(done != True):
+        #Get user input on what they're trying to do.
         print ("For sender SMTP connection type SMTP, for reciever HTTP connection type HTTP\n")
         conn_type = input()
         if(conn_type == "SMTP"):
+            #User wants to send emails, connect and call SMTP handler.
             s.connect((ip_regex[0], int(SMTP_Port)))
             Client_classes.SMTP_Handler(s)
             done = True
         elif(conn_type == "HTTP"):
+            #User wants to download emails, connect and call the HTTP handler.
             s.connect((ip_regex[0], int(HTTP_Port)))
             Client_classes.HTTP_Handler(s)
             done = True
         else:
+            #Input not recognized, let the user know and prompt for input again.
             print("input not recognized.\n")
     
