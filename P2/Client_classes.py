@@ -6,21 +6,26 @@ import os
 import select
 import base64
 
+#Handle SMTP connection
 class SMTP_Handler:
 
     def __init__(self, s):
+        #Get sends emails from the server side split up into packets, so the main loop will need to ski[p user input in that case
         quit = False
         skip = False
         while (quit != True):
+            #Get and send user input if the last command wasn't GET.
             if(skip == False):
                 cmd = input()
                 b_cmd = codecs.encode(cmd, "utf-8")
                 s.sendall(b_cmd)
             else:
+                #Set skip to false in case emails are done downloading.
                 skip = False
+
+            #Receive and parse the next reply.
             b_msg = s.recv(1024)
             msg = codecs.decode(b_msg, "utf-8")
-            
             msg_list = msg.split()
             if(msg_list[0] == "354"):
                 print(msg)
