@@ -33,8 +33,10 @@ class SMTP_Handler:
                 poll_obj = select.poll()
                 poll_obj.register(s, select.POLLIN)
                 done = False
-                #Poll the socket for a reply that will only besent once the server recieves a line with only a .\n
+                #Loop until the user is finished with their email.
                 while(done == False):
+                    #Poll will return an empty list if there is no reply.
+                    #TThe server will only reply after encountering a line with just ".\n"
                     event_list = poll_obj.poll(1000)
                     for sock, event in event_list:
                         b_msg = s.recv(1024)
@@ -42,6 +44,7 @@ class SMTP_Handler:
                         print(msg)
                         done = True
                         break
+                    #User pressed enter, append a newline and send.
                     cmd = input() + "\n"
                     b_cmd = codecs.encode(cmd, "utf-8")
                     s.sendall(b_cmd)
