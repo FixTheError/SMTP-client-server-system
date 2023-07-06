@@ -10,17 +10,17 @@ import base64
 class SMTP_Handler:
 
     def __init__(self, s):
-        #Get sends emails from the server side split up into packets, so the main loop will need to ski[p user input in that case
+        #Create quit and skip flags for when the user quits and commands that don't need sequential input
         quit = False
         skip = False
         while (quit != True):
-            #Get and send user input if the last command wasn't GET.
+            #Get and send user input if necessary.
             if(skip == False):
                 cmd = input()
                 b_cmd = codecs.encode(cmd, "utf-8")
                 s.sendall(b_cmd)
             else:
-                #Set skip to false in case emails are done downloading.
+                #Set skip to false in case the next reply requires subsequent input
                 skip = False
 
             #Receive and parse the next reply.
