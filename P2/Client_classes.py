@@ -28,10 +28,12 @@ class SMTP_Handler:
             msg = codecs.decode(b_msg, "utf-8")
             msg_list = msg.split()
             if(msg_list[0] == "354"):
+                #Sertver prompted user to start mail input
                 print(msg)
                 poll_obj = select.poll()
                 poll_obj.register(s, select.POLLIN)
                 done = False
+                #Poll the socket for a reply that will only besent once the server recieves a line with only a .\n
                 while(done == False):
                     event_list = poll_obj.poll(1000)
                     for sock, event in event_list:
