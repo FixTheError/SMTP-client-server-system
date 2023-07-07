@@ -50,9 +50,11 @@ class SMTP_Handler:
                     s.sendall(b_cmd)
                 
             elif((msg_list[0] == "221") or (msg_list[0] == "535")):
+                #Server terminated the connection, either in response to the QUIT command, or due to an error.
                 print(msg)
                 quit = True
             elif(msg_list[0] == "334"):
+                #Server prompted user for username or password, get user input, encode, and send it.
                 tmp_64 = codecs.encode(msg_list[1], "utf-8")
                 tmp = base64.b64decode(tmp_64)
                 print_buf = "334 " + codecs.decode(tmp)
@@ -63,6 +65,8 @@ class SMTP_Handler:
                 s.sendall(cmd_64)
                 skip = True
             elif(msg_list[0] == "330"):
+                #Server sent a password for the new user and has now terminated the connection.
+                #Decode and print the message, then close the socket and quit so the user can log in.
                 tmp_64 = codecs.encode(msg_list[1], "utf-8")
                 tmp = base64.b64decode(tmp_64)
                 print_buf = "330 " + codecs.decode(tmp, "utf-8")
