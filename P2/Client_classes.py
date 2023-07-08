@@ -102,13 +102,17 @@ class HTTP_Handler:
             
             msg_list = message.split()
             if(msg_list[0] == "535"):
+                #Authentication faild and the server disconnected, close the socket and quit.
                 print(message)
                 s.close()
                 return
             elif(msg_list[0] == "235"):
+                #Authentication succeeded, print the message.
                 print(message)
-                done = True
+                #done = True
             elif(msg_list[0] == "330"):
+                #Server responded with password for new user and terminated the connection.
+                #print the message, close the socket, and return.
                 tmp_64 = codecs.encode(msg_list[1], "utf-8")
                 tmp = base64.b64decode(tmp_64)
                 print_buf = "330 " + codecs.decode(tmp)
