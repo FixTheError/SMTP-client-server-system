@@ -74,22 +74,28 @@ class SMTP_Handler:
                 s.close()
                 quit = True
             else:
+                #Server responded with a code that doesn't require any further action, such as 250 OK
                 print(msg)
 
+#HTTP interface.
 class HTTP_Handler:
 
     def __init__(self, s):
+        #Set up flags for when to skip input and when to quit.
+        #Emails are sent in packets that could be smaller than the entire email, so input isn't always needed. 
         done = False
         skip = False
         print("Type AUTH and hit enter to log in")
         while(done == False):
-            
+            #Get user input if needed, otherwise set skip back to false just in case.
             if(skip == False):
                 cmd = input()
                 b_cmd = codecs.encode(cmd, "utf-8")
                 s.sendall(b_cmd)
             else:
                 skip = False
+
+            #recieve and parse the next server response.
             msg = s.recv(1024)
             message = codecs.decode(msg, "utf-8")
             
