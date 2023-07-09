@@ -120,7 +120,8 @@ class HTTP_Handler:
                 s.close()
                 return
             elif(msg_list[0] == "334"):
-                
+                #Server has prompted the user for a username or password, decode and display the message.
+                #Then set skip to true because the next command will either require user input to be encoded in base64, or not require input.
                 tmp_64 = codecs.encode(msg_list[1], "utf-8")
                 tmp = base64.b64decode(tmp_64)
                 print_buf = "334 " + codecs.decode(tmp)
@@ -130,13 +131,15 @@ class HTTP_Handler:
                 cmd_64 = base64.b64encode(b_cmd)
                 s.sendall(cmd_64)
                 skip = True
-                
-        ans = 'n'
 
+        #Set up an answer variable to verify the command with the user and find or make a directoey to sytore emails/
+        ans = 'n'
         if not os.path.exists("emails"):
             os.makedirs("emails")
         else:
             print("directory exists\n")
+
+        #Get the username and number of emails the user wants to download and construct a command out of this information.
         while(ans =='n'):
             print("Enter your username.\n")
             usr = input()
@@ -144,8 +147,12 @@ class HTTP_Handler:
             count = int(input())
             get = "GET db/" + usr + "/ HTTP/1.1\nHost: 447.edu\nCount: " + str(count)
             print(get)
+            #Verify the command with the user.
             print("\nIs this correct? y/n\n")
             ans = input()
+
+        #Send the GET requwst and recieveand print the OK response.
+        #Probably should have a conditional to make sure the response was an OK.
         b_buf = codecs.encode(get, "utf-8")
         s.sendall(b_buf)
         message = s.recv(1024)
@@ -156,6 +163,9 @@ class HTTP_Handler:
         num_files += 1
         t_path = "emails/" + str(num_files)
         fp = open(t_path, "w")
+        #Recieve packets until the server finishes and write the data to an email file, and close the file when done.
+        #It would make more sense to set up a loop to count the number of "./n" responses so each email can have its own file.
+        #The connection should also be closed and the done flag set to done to terminate the transaction.
         while(msg != "250 OK"):
             message = s.recv(1024)
             msg = codecs.decode(message, "utf-8")
